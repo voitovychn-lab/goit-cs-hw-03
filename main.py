@@ -1,29 +1,29 @@
 
 import os
-from pymongo import MongoClient
 from dotenv import load_dotenv
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
 
-# Завантажую налаштування з файлу .env
+# Завантажую дані з файлу .env
 load_dotenv()
 
 # Підключаюся до MongoDB
 client = MongoClient(os.getenv("MONGO_URI"))
-
-# Вибираю базу даних і колекцію котів
-db = client["cats_db"]
-collection = db["cats"]
+db = client.cats_db
+collection = db.cats
 
 
-# Виводжу всіх котів із колекції
+# Виводжу всіх котів
 def show_all_cats():
-    cats = list(collection.find())
-
-    if not cats:
-        print("Котів не знайдено")
-        return
+    cats = collection.find()
+    found = False
 
     for cat in cats:
         print(cat)
+        found = True
+
+    if not found:
+        print("Котів не знайдено")
 
 
 # Шукаю кота за ім'ям
@@ -69,7 +69,7 @@ def update_cat_age():
         print("Кота не знайдено")
 
 
-# Додаю нову характеристику коту
+# Додаю характеристику коту
 def add_cat_feature():
     name = input("Введіть ім'я кота: ")
     feature = input("Введіть нову характеристику: ")
@@ -97,66 +97,66 @@ def delete_cat():
         print("Кота не знайдено")
 
 
-# Видаляю всіх котів із колекції
+# Видаляю всіх котів
 def delete_all_cats():
     confirm = input("Видалити всіх котів? (так/ні): ")
 
     if confirm.lower() == "так":
         result = collection.delete_many({})
-        print("Видалено котів:", result.deleted_count)
+        print(f"Видалено котів: {result.deleted_count}")
     else:
         print("Видалення скасовано")
 
 
-# Створюю меню для вибору операцій
+# Створюю меню програми
 def main():
+    while True:
+        print("\nМеню MongoDB:")
+        print("1. Показати всіх котів")
+        print("2. Знайти кота за ім'ям")
+        print("3. Додати кота")
+        print("4. Оновити вік кота")
+        print("5. Додати характеристику коту")
+        print("6. Видалити кота")
+        print("7. Видалити всіх котів")
+        print("0. Вийти")
+
+        choice = input("Виберіть дію: ")
+
+        try:
+            if choice == "1":
+                show_all_cats()
+            elif choice == "2":
+                find_cat()
+            elif choice == "3":
+                add_cat()
+            elif choice == "4":
+                update_cat_age()
+            elif choice == "5":
+                add_cat_feature()
+            elif choice == "6":
+                delete_cat()
+            elif choice == "7":
+                delete_all_cats()
+            elif choice == "0":
+                print("Завершення роботи")
+                break
+            else:
+                print("Невірний вибір")
+
+        except ValueError:
+            print("Помилка: введіть правильне число")
+
+        except PyMongoError as e:
+            print("Помилка MongoDB:", e)
+
+
+# Запускаю програму
+if __name__ == "__main__":
     try:
         client.admin.command("ping")
-        print("Успішно підключено до MongoDB!")
-
-        while True:
-            print("\n--- МЕНЮ ---")
-            print("1. Показати всіх котів")
-            print("2. Знайти кота за ім'ям")
-            print("3. Додати кота")
-            print("4. Змінити вік кота")
-            print("5. Додати характеристику коту")
-            print("6. Видалити кота")
-            print("7. Видалити всіх котів")
-            print("0. Вийти")
-
-            choice = input("Виберіть дію: ")
-
-            try:
-                if choice == "1":
-                    show_all_cats()
-                elif choice == "2":
-                    find_cat()
-                elif choice == "3":
-                    add_cat()
-                elif choice == "4":
-                    update_cat_age()
-                elif choice == "5":
-                    add_cat_feature()
-                elif choice == "6":
-                    delete_cat()
-                elif choice == "7":
-                    delete_all_cats()
-                elif choice == "0":
-                    print("Завершую роботу")
-                    break
-                else:
-                    print("Невідома команда")
-            except ValueError:
-                print("Помилка: введіть правильне число")
-
-    except Exception as e:
-        print("Помилка:", e)
-
+        main()
+    except PyMongoError as e:
+        print("Помилка підключення до MongoDB:", e)
     finally:
-        # Закриваю підключення до MongoDB
         client.close()
-
-
-if __name__ == "__main__":
-    main()
